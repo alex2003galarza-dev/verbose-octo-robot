@@ -684,7 +684,7 @@
             document.getElementById('avgMinutes').textContent = avgMinutes;
         }
 
-        // Export functions (same as before)
+        // Export functions (updated to work with current view)
         function exportToCSV() {
             if (entries.length === 0) {
                 alert('No data to export!');
@@ -707,7 +707,7 @@
                 ].join(','))
             ].join('\n');
             
-            downloadFile(csvContent, `employee_data_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+            downloadFile(csvContent, `employee_data_all_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
         }
 
         function exportToJSON() {
@@ -717,7 +717,7 @@
             }
             
             const jsonContent = JSON.stringify(entries, null, 2);
-            downloadFile(jsonContent, `employee_data_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+            downloadFile(jsonContent, `employee_data_all_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
         }
 
         function exportMonthlyReport() {
