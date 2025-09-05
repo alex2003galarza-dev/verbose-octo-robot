@@ -68,6 +68,29 @@
             padding-bottom: 10px;
         }
 
+        .status-indicator {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: #48bb78;
+            color: white;
+        }
+
+        .status-connecting {
+            background: #ed8936;
+            color: white;
+        }
+
+        .status-error {
+            background: #e53e3e;
+            color: white;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -133,13 +156,14 @@
             letter-spacing: 1px;
         }
 
-        .add-btn:hover {
+        .add-btn:hover:not(:disabled) {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .add-btn:active {
-            transform: translateY(-1px);
+        .add-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .export-section {
@@ -248,6 +272,12 @@
             background: #c53030;
         }
 
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .container {
                 grid-template-columns: 1fr;
@@ -263,6 +293,11 @@
     <div class="container">
         <div class="form-section">
             <h1>Employee Entry Form</h1>
+            
+            <div id="connectionStatus" class="status-indicator status-connecting">
+                🔄 Connecting to database...
+            </div>
+            
             <div class="form-group">
                 <label for="date">Date</label>
                 <input type="date" id="date" required>
@@ -322,7 +357,9 @@
                 <textarea id="notes" rows="3" placeholder="Enter any additional notes..."></textarea>
             </div>
             
-            <button type="button" class="add-btn" onclick="addEntry()">Add Entry</button>
+            <button type="button" class="add-btn" id="addBtn" onclick="addEntry()" disabled>
+                Add Entry
+            </button>
         </div>
         
         <div class="dashboard-section">
@@ -351,46 +388,39 @@
                 </div>
             </div>
             
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Room</th>
-                        <th>Employee</th>
-                        <th>Start</th>
-                        <th>Stop</th>
-                        <th>Minutes</th>
-                        <th>Shift</th>
-                        <th>DC/UV/BED</th>
-                        <th>Notes</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="dataTableBody">
-                </tbody>
-            </table>
+            <div id="dataTableContainer">
+                <div class="loading">Loading data...</div>
+            </div>
         </div>
     </div>
 
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCZEK0WOwIFQ90KXKWKv6Abvl70SSEUh0Q",
+            authDomain: "dashboard-dev-2025.firebaseapp.com",
+            projectId: "dashboard-dev-2025",
+            storageBucket: "dashboard-dev-2025.firebasestorage.app",
+            messagingSenderId: "421482953039",
+            appId: "1:421482953039:web:628c5db630065ceb63ad3a",
+            measurementId: "G-E9PXMYHPKW"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // Global variables
         let entries = [];
+        let isConnected = false;
 
         // Initialize the page
         function initializePage() {
-            console.log('Initializing page...');
-            
-            // Load data from localStorage
-            const savedEntries = localStorage.getItem('employeeEntries');
-            if (savedEntries) {
-                try {
-                    entries = JSON.parse(savedEntries);
-                    console.log('Loaded entries:', entries);
-                } catch (error) {
-                    console.error('Error loading saved data:', error);
-                    entries = [];
-                }
-            }
+            console.log('Initializing Firebase dashboard...');
             
             // Set today's date
             const dateInput = document.getElementById('date');
@@ -404,10 +434,74 @@
             document.getElementById('startTime').oninput = calculateMinutes;
             document.getElementById('stopTime').oninput = calculateMinutes;
             
-            // Update dashboard
-            updateDashboard();
+            // Connect to Firebase and load data
+            connectToFirebase();
+        }
+
+        // Connect to Firebase and setup real-time listener
+        function connectToFirebase() {
+            try {
+                // Listen for real-time updates
+                db.collection('employee_entries')
+                    .orderBy('timestamp', 'desc')
+                    .onSnapshot((snapshot) => {
+                        console.log('Received Firebase update');
+                        entries = [];
+                        
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            entries.push({
+                                id: doc.id,
+                                date: data.date,
+                                room: data.room,
+                                employee: data.employee,
+                                startTime: data.startTime,
+                                stopTime: data.stopTime,
+                                minutes: data.minutes,
+                                shift: data.shift,
+                                dcUvBed: data.dcUvBed,
+                                notes: data.notes || ''
+                            });
+                        });
+                        
+                        updateDashboard();
+                        setConnectionStatus('connected');
+                    }, (error) => {
+                        console.error('Firebase connection error:', error);
+                        setConnectionStatus('error');
+                    });
+                    
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                setConnectionStatus('error');
+            }
+        }
+
+        // Update connection status
+        function setConnectionStatus(status) {
+            const statusEl = document.getElementById('connectionStatus');
+            const addBtn = document.getElementById('addBtn');
             
-            console.log('Page initialized successfully');
+            switch(status) {
+                case 'connected':
+                    statusEl.className = 'status-indicator status-connected';
+                    statusEl.innerHTML = '✅ Connected to database';
+                    addBtn.disabled = false;
+                    isConnected = true;
+                    break;
+                case 'connecting':
+                    statusEl.className = 'status-indicator status-connecting';
+                    statusEl.innerHTML = '🔄 Connecting to database...';
+                    addBtn.disabled = true;
+                    isConnected = false;
+                    break;
+                case 'error':
+                    statusEl.className = 'status-indicator status-error';
+                    statusEl.innerHTML = '❌ Database connection failed - Check Firebase config';
+                    addBtn.disabled = true;
+                    isConnected = false;
+                    break;
+            }
         }
 
         // Calculate minutes between start and stop time
@@ -442,9 +536,14 @@
             }
         }
 
-        // Add new entry
-        function addEntry() {
-            console.log('addEntry() called');
+        // Add new entry to Firebase
+        async function addEntry() {
+            if (!isConnected) {
+                alert('Not connected to database. Please check your connection.');
+                return;
+            }
+
+            console.log('Adding entry to Firebase...');
             
             // Get form values
             const date = document.getElementById('date').value;
@@ -455,8 +554,6 @@
             const shift = document.getElementById('shift').value;
             const dcUvBed = document.getElementById('dcUvBed').value;
             const notes = document.getElementById('notes').value;
-            
-            console.log('Form values:', { date, room, employee, startTime, stopTime, shift, dcUvBed, notes });
             
             // Validate required fields
             if (!date || !room || !employee || !startTime || !stopTime || !shift || !dcUvBed) {
@@ -472,7 +569,6 @@
             
             // Create entry object
             const entry = {
-                id: Date.now(),
                 date: date,
                 room: room,
                 employee: employee,
@@ -481,78 +577,102 @@
                 minutes: minutes,
                 shift: shift,
                 dcUvBed: dcUvBed,
-                notes: notes
+                notes: notes,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
             
-            console.log('Created entry:', entry);
-            
-            // Add to entries array
-            entries.push(entry);
-            
-            // Save to localStorage
             try {
-                localStorage.setItem('employeeEntries', JSON.stringify(entries));
-                console.log('Saved to localStorage successfully');
+                // Add to Firebase
+                await db.collection('employee_entries').add(entry);
+                console.log('Entry added to Firebase successfully');
+                
+                // Clear form
+                document.getElementById('room').value = '';
+                document.getElementById('employee').value = '';
+                document.getElementById('startTime').value = '';
+                document.getElementById('stopTime').value = '';
+                document.getElementById('shift').value = '';
+                document.getElementById('dcUvBed').value = '';
+                document.getElementById('notes').value = '';
+                document.getElementById('minutesDisplay').textContent = '0';
+                
+                alert('Entry added successfully!');
+                
             } catch (error) {
-                console.error('Error saving to localStorage:', error);
-                alert('Error saving data. Please try again.');
-                return;
+                console.error('Error adding entry:', error);
+                alert('Error adding entry. Please try again.');
             }
-            
-            // Clear form
-            document.getElementById('room').value = '';
-            document.getElementById('employee').value = '';
-            document.getElementById('startTime').value = '';
-            document.getElementById('stopTime').value = '';
-            document.getElementById('shift').value = '';
-            document.getElementById('dcUvBed').value = '';
-            document.getElementById('notes').value = '';
-            document.getElementById('minutesDisplay').textContent = '0';
-            
-            // Update dashboard
-            updateDashboard();
-            
-            alert('Entry added successfully!');
         }
 
-        // Delete entry
-        function deleteEntry(id) {
-            console.log('Deleting entry:', id);
-            entries = entries.filter(entry => entry.id !== id);
-            localStorage.setItem('employeeEntries', JSON.stringify(entries));
-            updateDashboard();
+        // Delete entry from Firebase
+        async function deleteEntry(id) {
+            if (!isConnected) {
+                alert('Not connected to database.');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this entry?')) {
+                return;
+            }
+
+            try {
+                await db.collection('employee_entries').doc(id).delete();
+                console.log('Entry deleted successfully');
+            } catch (error) {
+                console.error('Error deleting entry:', error);
+                alert('Error deleting entry. Please try again.');
+            }
         }
 
         // Update dashboard
         function updateDashboard() {
             console.log('Updating dashboard with', entries.length, 'entries');
             
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = '';
+            const container = document.getElementById('dataTableContainer');
             
-            // Sort entries by date and time (newest first)
-            const sortedEntries = [...entries].sort((a, b) => {
-                const dateA = new Date(a.date + ' ' + a.startTime);
-                const dateB = new Date(b.date + ' ' + b.startTime);
-                return dateB - dateA;
-            });
-            
-            // Add rows to table
-            sortedEntries.forEach(entry => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${new Date(entry.date).toLocaleDateString()}</td>
-                    <td>${entry.room}</td>
-                    <td>${entry.employee}</td>
-                    <td>${entry.startTime}</td>
-                    <td>${entry.stopTime}</td>
-                    <td>${entry.minutes}</td>
-                    <td>${entry.shift}</td>
-                    <td>${entry.dcUvBed}</td>
-                    <td>${entry.notes || '-'}</td>
-                    <td><button class="delete-btn" onclick="deleteEntry(${entry.id})">Delete</button></td>
+            if (entries.length === 0) {
+                container.innerHTML = '<div class="loading">No entries found. Add your first entry!</div>';
+            } else {
+                container.innerHTML = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Room</th>
+                                <th>Employee</th>
+                                <th>Start</th>
+                                <th>Stop</th>
+                                <th>Minutes</th>
+                                <th>Shift</th>
+                                <th>DC/UV/BED</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                        </tbody>
+                    </table>
                 `;
-            });
+                
+                const tbody = document.getElementById('dataTableBody');
+                
+                // Add rows to table
+                entries.forEach(entry => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${new Date(entry.date).toLocaleDateString()}</td>
+                        <td>${entry.room}</td>
+                        <td>${entry.employee}</td>
+                        <td>${entry.startTime}</td>
+                        <td>${entry.stopTime}</td>
+                        <td>${entry.minutes}</td>
+                        <td>${entry.shift}</td>
+                        <td>${entry.dcUvBed}</td>
+                        <td>${entry.notes || '-'}</td>
+                        <td><button class="delete-btn" onclick="deleteEntry('${entry.id}')">Delete</button></td>
+                    `;
+                });
+            }
             
             // Update summary cards
             const totalEntries = entries.length;
@@ -564,7 +684,7 @@
             document.getElementById('avgMinutes').textContent = avgMinutes;
         }
 
-        // Export functions
+        // Export functions (same as before)
         function exportToCSV() {
             if (entries.length === 0) {
                 alert('No data to export!');
