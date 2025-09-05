@@ -1076,9 +1076,13 @@
         }
 
         function updateDashboard() {
+            // Only update dashboard for admin users
+            if (userType !== 'admin') return;
+            
             console.log('Updating dashboard with', filteredEntries.length, 'filtered entries');
             
             const container = document.getElementById('dataTableContainer');
+            if (!container) return;
             
             if (filteredEntries.length === 0) {
                 container.innerHTML = '<div class="loading">No entries match your filters.</div>';
@@ -1128,9 +1132,13 @@
             const totalMinutes = filteredEntries.reduce((sum, entry) => sum + entry.minutes, 0);
             const avgMinutes = totalEntries > 0 ? Math.round(totalMinutes / totalEntries) : 0;
             
-            document.getElementById('totalEntries').textContent = totalEntries;
-            document.getElementById('totalMinutes').textContent = totalMinutes;
-            document.getElementById('avgMinutes').textContent = avgMinutes;
+            const totalEntriesEl = document.getElementById('totalEntries');
+            const totalMinutesEl = document.getElementById('totalMinutes');
+            const avgMinutesEl = document.getElementById('avgMinutes');
+            
+            if (totalEntriesEl) totalEntriesEl.textContent = totalEntries;
+            if (totalMinutesEl) totalMinutesEl.textContent = totalMinutes;
+            if (avgMinutesEl) avgMinutesEl.textContent = avgMinutes;
         }
 
         let sortDirection = {};
