@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Tracking Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dashboard-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        h1, h2 {
+            color: #4a5568;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .time-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .minutes-display {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .add-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .export-section {
+            margin-bottom: 25px;
+        }
+
+        .export-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: none;
+            letter-spacing: normal;
+            margin: 0;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover {
+            background-color: #f7fafc;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .delete-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            width: auto;
+            margin: 0;
+        }
+
+        .delete-btn:hover {
+            background: #c53030;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .time-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-section">
+            <h1>Employee Entry Form</h1>
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="room">Room Number</label>
+                <input type="text" id="room" placeholder="Enter room number" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="employee">Employee Initials</label>
+                <input type="text" id="employee" placeholder="Enter initials" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Time Tracking</label>
+                <div class="time-group">
+                    <div>
+                        <label for="startTime">Start Time</label>
+                        <input type="time" id="startTime" required>
+                    </div>
+                    <div>
+                        <label for="stopTime">Stop Time</label>
+                        <input type="time" id="stopTime" required>
+                    </div>
+                    <div>
+                        <label>Minutes</label>
+                        <div class="minutes-display" id="minutesDisplay">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="shift">Shift</label>
+                <select id="shift" required>
+                    <option value="">Select Shift</option>
+                    <option value="First">First</option>
+                    <option value="Second">Second</option>
+                    <option value="Third">Third</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="dcUvBed">DC/UV/BED</label>
+                <select id="dcUvBed" required>
+                    <option value="">Select Option</option>
+                    <option value="No Bed">No Bed</option>
+                    <option value="Deep Cl & UV">Deep Cl & UV</option>
+                    <option value="UV">UV</option>
+                    <option value="No Delivery">No Delivery</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" rows="3" placeholder="Enter any additional notes..."></textarea>
+            </div>
+            
+            <button type="button" class="add-btn" onclick="addEntry()">Add Entry</button>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2>Dashboard</h2>
+            
+            <div class="export-section">
+                <div class="export-buttons">
+                    <button onclick="exportToCSV()" class="export-btn">📊 Export to CSV</button>
+                    <button onclick="exportToJSON()" class="export-btn">📄 Export to JSON</button>
+                    <button onclick="exportMonthlyReport()" class="export-btn">📈 Monthly Report</button>
+                </div>
+            </div>
+
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Total Entries</h3>
+                    <div class="value" id="totalEntries">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Minutes</h3>
+                    <div class="value" id="totalMinutes">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Avg Minutes</h3>
+                    <div class="value" id="avgMinutes">0</div>
+                </div>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Room</th>
+                        <th>Employee</th>
+                        <th>Start</th>
+                        <th>Stop</th>
+                        <th>Minutes</th>
+                        <th>Shift</th>
+                        <th>DC/UV/BED</th>
+                        <th>Notes</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let entries = [];
+
+        // Initialize the page
+        function initializePage() {
+            console.log('Initializing page...');
+            
+            // Load data from localStorage
+            const savedEntries = localStorage.getItem('employeeEntries');
+            if (savedEntries) {
+                try {
+                    entries = JSON.parse(savedEntries);
+                    console.log('Loaded entries:', entries);
+                } catch (error) {
+                    console.error('Error loading saved data:', error);
+                    entries = [];
+                }
+            }
+            
+            // Set today's date
+            const dateInput = document.getElementById('date');
+            const today = new Date();
+            const dateString = today.toISOString().split('T')[0];
+            dateInput.value = dateString;
+            
+            // Setup event listeners
+            document.getElementById('startTime').onchange = calculateMinutes;
+            document.getElementById('stopTime').onchange = calculateMinutes;
+            document.getElementById('startTime').oninput = calculateMinutes;
+            document.getElementById('stopTime').oninput = calculateMinutes;
+            
+            // Update dashboard
+            updateDashboard();
+            
+            console.log('Page initialized successfully');
+        }
+
+        // Calculate minutes between start and stop time
+        function calculateMinutes() {
+            const startTime = document.getElementById('startTime').value;
+            const stopTime = document.getElementById('stopTime').value;
+            const display = document.getElementById('minutesDisplay');
+            
+            if (!startTime || !stopTime) {
+                display.textContent = '0';
+                return 0;
+            }
+            
+            try {
+                const start = new Date('2000-01-01 ' + startTime);
+                let stop = new Date('2000-01-01 ' + stopTime);
+                
+                // Handle overnight shifts
+                if (stop <= start) {
+                    stop.setDate(stop.getDate() + 1);
+                }
+                
+                const diffMs = stop - start;
+                const minutes = Math.round(diffMs / 60000);
+                
+                display.textContent = minutes;
+                return minutes;
+            } catch (error) {
+                console.error('Error calculating minutes:', error);
+                display.textContent = '0';
+                return 0;
+            }
+        }
+
+        // Add new entry
+        function addEntry() {
+            console.log('addEntry() called');
+            
+            // Get form values
+            const date = document.getElementById('date').value;
+            const room = document.getElementById('room').value;
+            const employee = document.getElementById('employee').value;
+            const startTime = document.getElementById('startTime').value;
+            const stopTime = document.getElementById('stopTime').value;
+            const shift = document.getElementById('shift').value;
+            const dcUvBed = document.getElementById('dcUvBed').value;
+            const notes = document.getElementById('notes').value;
+            
+            console.log('Form values:', { date, room, employee, startTime, stopTime, shift, dcUvBed, notes });
+            
+            // Validate required fields
+            if (!date || !room || !employee || !startTime || !stopTime || !shift || !dcUvBed) {
+                alert('Please fill in all required fields!');
+                return;
+            }
+            
+            const minutes = calculateMinutes();
+            if (minutes <= 0) {
+                alert('Please check your start and stop times!');
+                return;
+            }
+            
+            // Create entry object
+            const entry = {
+                id: Date.now(),
+                date: date,
+                room: room,
+                employee: employee,
+                startTime: startTime,
+                stopTime: stopTime,
+                minutes: minutes,
+                shift: shift,
+                dcUvBed: dcUvBed,
+                notes: notes
+            };
+            
+            console.log('Created entry:', entry);
+            
+            // Add to entries array
+            entries.push(entry);
+            
+            // Save to localStorage
+            try {
+                localStorage.setItem('employeeEntries', JSON.stringify(entries));
+                console.log('Saved to localStorage successfully');
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+                alert('Error saving data. Please try again.');
+                return;
+            }
+            
+            // Clear form
+            document.getElementById('room').value = '';
+            document.getElementById('employee').value = '';
+            document.getElementById('startTime').value = '';
+            document.getElementById('stopTime').value = '';
+            document.getElementById('shift').value = '';
+            document.getElementById('dcUvBed').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('minutesDisplay').textContent = '0';
+            
+            // Update dashboard
+            updateDashboard();
+            
+            alert('Entry added successfully!');
+        }
+
+        // Delete entry
+        function deleteEntry(id) {
+            console.log('Deleting entry:', id);
+            entries = entries.filter(entry => entry.id !== id);
+            localStorage.setItem('employeeEntries', JSON.stringify(entries));
+            updateDashboard();
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            console.log('Updating dashboard with', entries.length, 'entries');
+            
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+            
+            // Sort entries by date and time (newest first)
+            const sortedEntries = [...entries].sort((a, b) => {
+                const dateA = new Date(a.date + ' ' + a.startTime);
+                const dateB = new Date(b.date + ' ' + b.startTime);
+                return dateB - dateA;
+            });
+            
+            // Add rows to table
+            sortedEntries.forEach(entry => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${new Date(entry.date).toLocaleDateString()}</td>
+                    <td>${entry.room}</td>
+                    <td>${entry.employee}</td>
+                    <td>${entry.startTime}</td>
+                    <td>${entry.stopTime}</td>
+                    <td>${entry.minutes}</td>
+                    <td>${entry.shift}</td>
+                    <td>${entry.dcUvBed}</td>
+                    <td>${entry.notes || '-'}</td>
+                    <td><button class="delete-btn" onclick="deleteEntry(${entry.id})">Delete</button></td>
+                `;
+            });
+            
+            // Update summary cards
+            const totalEntries = entries.length;
+            const totalMinutes = entries.reduce((sum, entry) => sum + entry.minutes, 0);
+            const avgMinutes = totalEntries > 0 ? Math.round(totalMinutes / totalEntries) : 0;
+            
+            document.getElementById('totalEntries').textContent = totalEntries;
+            document.getElementById('totalMinutes').textContent = totalMinutes;
+            document.getElementById('avgMinutes').textContent = avgMinutes;
+        }
+
+        // Export functions
+        function exportToCSV() {
+            if (entries.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+            
+            const headers = ['Date', 'Room', 'Employee', 'Start Time', 'Stop Time', 'Minutes', 'Shift', 'DC/UV/BED', 'Notes'];
+            const csvContent = [
+                headers.join(','),
+                ...entries.map(entry => [
+                    entry.date,
+                    entry.room,
+                    entry.employee,
+                    entry.startTime,
+                    entry.stopTime,
+                    entry.minutes,
+                    entry.shift,
+                    `"${entry.dcUvBed}"`,
+                    `"${entry.notes || ''}"`
+                ].join(','))
+            ].join('\n');
+            
+            downloadFile(csvContent, `employee_data_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+        }
+
+        function exportToJSON() {
+            if (entries.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+            
+            const jsonContent = JSON.stringify(entries, null, 2);
+            downloadFile(jsonContent, `employee_data_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+        }
+
+        function exportMonthlyReport() {
+            if (entries.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+            
+            // Get current month's data
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            const monthlyEntries = entries.filter(entry => {
+                const entryDate = new Date(entry.date);
+                return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+            });
+            
+            if (monthlyEntries.length === 0) {
+                alert('No data for current month!');
+                return;
+            }
+            
+            // Generate monthly summary
+            const totalMinutes = monthlyEntries.reduce((sum, entry) => sum + entry.minutes, 0);
+            const avgMinutes = Math.round(totalMinutes / monthlyEntries.length);
+            
+            // Group by employee
+            const employeeStats = {};
+            monthlyEntries.forEach(entry => {
+                if (!employeeStats[entry.employee]) {
+                    employeeStats[entry.employee] = { entries: 0, totalMinutes: 0 };
+                }
+                employeeStats[entry.employee].entries++;
+                employeeStats[entry.employee].totalMinutes += entry.minutes;
+            });
+            
+            // Group by shift
+            const shiftStats = {};
+            monthlyEntries.forEach(entry => {
+                shiftStats[entry.shift] = (shiftStats[entry.shift] || 0) + 1;
+            });
+            
+            // Create report content
+            const monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const reportContent = [
+                `MONTHLY REPORT - ${monthName}`,
+                '='.repeat(50),
+                '',
+                `Total Entries: ${monthlyEntries.length}`,
+                `Total Minutes: ${totalMinutes}`,
+                `Average Minutes per Entry: ${avgMinutes}`,
+                '',
+                'EMPLOYEE BREAKDOWN:',
+                '-'.repeat(30),
+                ...Object.entries(employeeStats).map(([employee, stats]) => 
+                    `${employee}: ${stats.entries} entries, ${stats.totalMinutes} minutes (avg: ${Math.round(stats.totalMinutes / stats.entries)})`
+                ),
+                '',
+                'SHIFT BREAKDOWN:',
+                '-'.repeat(30),
+                ...Object.entries(shiftStats).map(([shift, count]) => 
+                    `${shift} Shift: ${count} entries`
+                ),
+                '',
+                'DETAILED DATA:',
+                '-'.repeat(30),
+                'Date,Room,Employee,Start,Stop,Minutes,Shift,DC/UV/BED,Notes',
+                ...monthlyEntries.map(entry => [
+                    entry.date,
+                    entry.room,
+                    entry.employee,
+                    entry.startTime,
+                    entry.stopTime,
+                    entry.minutes,
+                    entry.shift,
+                    entry.dcUvBed,
+                    entry.notes || ''
+                ].join(','))
+            ].join('\n');
+            
+            downloadFile(reportContent, `monthly_report_${monthName.replace(' ', '_')}.csv`, 'text/csv');
+        }
+
+        function downloadFile(content, fileName, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize when page loads
+        window.onload = initializePage;
+    </script>
+</body>
+</html>
